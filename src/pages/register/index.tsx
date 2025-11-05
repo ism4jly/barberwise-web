@@ -1,9 +1,18 @@
+import { useState } from "react"
 import Head from "next/head"
 import { Flex, Text, Center, Input, Button } from "@chakra-ui/react"
-
 import Link from 'next/link'
 
 export default function Register(){
+
+    const [name, setName] = useState("")
+    const [email, setEmail] = useState("")
+    const [password, setPassword] = useState("")
+
+    function handleRegister(){
+        console.log("Register attempt with:", { name, email, password })
+    }
+
     return(
         <>
         <Head>
@@ -27,7 +36,9 @@ export default function Register(){
                         size="lg"
                         placeholder="Nome da Barbearia"
                         color="white"
-                        type="email"
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
                     />
                     
                     <Input
@@ -38,6 +49,8 @@ export default function Register(){
                         placeholder="Digite seu e-mail"
                         color="white"
                         type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
                     />
 
                     <Input
@@ -48,6 +61,8 @@ export default function Register(){
                         placeholder="********"
                         color="white"
                         type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
                     />
 
                     <Button
@@ -55,7 +70,8 @@ export default function Register(){
                         color="gray.900"
                         size="lg"
                         fontWeight="bold"
-                    _hover={{ bg: "#ffb13e" }}
+                        _hover={{ bg: "#ffb13e" }}
+                        onClick={handleRegister}
                     >
                         Cadastrar
                     </Button>
