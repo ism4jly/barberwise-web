@@ -55,12 +55,14 @@ export default function Haircuts(){
                             w="100%"
                             p={4}
                             bg="barber.400"
-                            direction="row"
+                            direction={isMobile ? "column" : "row"}
+                            align={isMobile ? "flex-start" : "center"}
                             rounded="4"
                             mb={2}
                             justifyContent="space-between"
                         >
                             <Flex
+                                mb={isMobile ? 2 : 0}
                                 direction="row"
                                 alignItems="center"
                                 justifyContent="center"
