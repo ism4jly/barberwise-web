@@ -49,7 +49,7 @@ export function Sidebar({children} : {children: ReactNode}) {
 
             <MobileNav display={{ base: 'flex', md: 'none' }} onOpen={onOpen} />
 
-            <Box ml={{ base: 0, md: 60 }} p="4">
+            <Box ml={{ base: 0, md: 60 }} p="12">
                 {children}
             </Box>
         </Box>
