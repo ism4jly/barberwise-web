@@ -24,7 +24,16 @@ export const config = defineConfig({
         text: { value: "{colors.barber.100}" },
         cta: { value: "{colors.button.cta}" },
         danger: { value: "{colors.button.danger}" },
+        sidebarBorder: {
+          _light: { value: "{colors.gray.200}" },
+          _dark: { value: "{colors.gray.700}" },
+        },
+        mb_bg: {
+          _light: { value: "{colors.white}" },
+          _dark: { value: "{colors.gray.900}" },
+        }
       },
+      
     },
 
     keyframes: {
