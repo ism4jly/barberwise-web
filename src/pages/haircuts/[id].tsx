@@ -1,3 +1,4 @@
+import { useState, ChangeEvent } from "react";
 import Head from "next/head";
 import {
     Flex,
@@ -6,19 +7,21 @@ import {
     Button,
     useMediaQuery,
     Input,
-    Stack, 
-    Switch
+    Stack,
+    Switch,
+    SwitchCheckedChangeDetails
 } from '@chakra-ui/react'
 
 import { Sidebar } from "@/components/sidebar";
 import { FiChevronLeft } from "react-icons/fi";
-
 import Link from "next/link";
 
 import { canSSRAuth } from "@/utils/canSSRAuth";
 import { setupAPIClient } from "@/services/api";
 
-interface HaircutProps{
+import Router from "next/router";
+
+interface HaircutProps {
     id: string;
     name: string;
     price: number | string;
@@ -26,24 +29,58 @@ interface HaircutProps{
     user_id: string;
 }
 
-interface SubscriptionProps{
+interface SubscriptionProps {
     id: string;
     status: string;
 }
 
-interface EditHaircutProps{
+interface EditHaircutProps {
     haircut: HaircutProps;
     subscription: SubscriptionProps | null;
 }
 
-export default function EditHaircut({haircut, subscription}: EditHaircutProps){
+export default function EditHaircut({ haircut, subscription }: EditHaircutProps) {
     const [isMobile] = useMediaQuery(["(max-width: 768px)"]);
 
-    return(
+    const [name, setName] = useState(haircut?.name);
+    const [price, setPrice] = useState(haircut?.price);
+    const [status, setStatus] = useState(haircut?.status);
+
+    const isSwitchChecked = !status; 
+
+    function handleChangeStatus(details: SwitchCheckedChangeDetails) {
+        const newStatus = details.checked ? false : true;
+        setStatus(newStatus);
+
+    }
+
+    async function handleUpdate() {
+        if (name === '' || price === '') return;
+
+        try {
+            const apiClient = setupAPIClient();
+
+            await apiClient.put('/haircut', {
+                haircut_id: haircut.id,
+                name,
+                price: Number(price),
+                status,
+            });
+
+            alert('Corte atualizado com sucesso!');
+
+            Router.push('/haircuts');
+        } catch (err) {
+            console.log(err);
+        }
+    }
+
+    return (
         <>
             <Head>
                 <title>BarberWise - Editar Corte</title>
             </Head>
+
             <Sidebar>
                 <Flex direction="column" alignItems="flex-start" justifyContent="flex-start">
                     <Flex
@@ -87,6 +124,9 @@ export default function EditHaircut({haircut, subscription}: EditHaircutProps){
                                 size="lg"
                                 type="text"
                                 w="100%"
+                                color="white"
+                                value={name}
+                                onChange={(e) => setName(e.target.value)}
                             />
 
                             <Input
@@ -97,17 +137,22 @@ export default function EditHaircut({haircut, subscription}: EditHaircutProps){
                                 size="lg"
                                 type="text"
                                 w="100%"
+                                color="white"
+                                value={price}
+                                onChange={(e) => setPrice(e.target.value)}
                             />
 
                             <Stack mb={6} align="center" direction="row">
                                 <Text fontWeight="bold" color="white">Desativar corte</Text>
-                                <Switch.Root 
-                                    colorPalette="red" 
-                                    size="lg" 
+                                <Switch.Root
+                                    colorPalette="red"
+                                    size="lg"
+                                    checked={isSwitchChecked}
+                                    onCheckedChange={handleChangeStatus}
                                 >
-                                <Switch.HiddenInput />
-                                <Switch.Control />
-                            </Switch.Root>
+                                    <Switch.HiddenInput />
+                                    <Switch.Control />
+                                </Switch.Root>
                             </Stack>
 
                             <Button
@@ -115,9 +160,10 @@ export default function EditHaircut({haircut, subscription}: EditHaircutProps){
                                 w="100%"
                                 bg="button.cta"
                                 color="gray.900"
-                                _hover={{ bg: "#ffb13e"}}
+                                _hover={{ bg: "#ffb13e" }}
                                 fontWeight="bold"
-                                disabled={subscription?.status === 'active' ? false : true}
+                                disabled={subscription?.status !== 'active'}
+                                onClick={handleUpdate}
                             >
                                 Salvar
                             </Button>
@@ -130,7 +176,7 @@ export default function EditHaircut({haircut, subscription}: EditHaircutProps){
                                         </Text>
                                     </Link>
                                     <Text color="white">
-                                         e tenha todos acessos liberados.
+                                        e tenha todos acessos liberados.
                                     </Text>
                                 </Flex>
                             )}
@@ -144,31 +190,27 @@ export default function EditHaircut({haircut, subscription}: EditHaircutProps){
 
 export const getServerSideProps = canSSRAuth(async (ctx) => {
     const { id } = ctx.params;
-    
-    try{
+
+    try {
         const apiClient = setupAPIClient(ctx);
-
         const check = await apiClient.get('/haircut/check');
-
         const response = await apiClient.get("/haircut/detail", {
-            params: {
-                haircut_id: id
-            }
-        })
-        
+            params: { haircut_id: id }
+        });
+
         return {
             props: {
                 haircut: response.data,
                 subscription: check.data?.subscriptions
             }
         }
-    }catch(err){
+    } catch (err) {
         console.log(err);
         return {
             redirect: {
                 destination: '/dashboard',
                 permanent: false,
             }
-        } 
+        }
     }
 });
