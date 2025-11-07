@@ -15,7 +15,28 @@ import { FiChevronLeft } from "react-icons/fi";
 
 import Link from "next/link";
 
-export default function EditHaircut(){
+import { canSSRAuth } from "@/utils/canSSRAuth";
+import { setupAPIClient } from "@/services/api";
+
+interface HaircutProps{
+    id: string;
+    name: string;
+    price: number | string;
+    status: boolean;
+    user_id: string;
+}
+
+interface SubscriptionProps{
+    id: string;
+    status: string;
+}
+
+interface EditHaircutProps{
+    haircut: HaircutProps;
+    subscription: SubscriptionProps | null;
+}
+
+export default function EditHaircut({haircut, subscription}: EditHaircutProps){
     const [isMobile] = useMediaQuery(["(max-width: 768px)"]);
 
     return(
@@ -96,9 +117,23 @@ export default function EditHaircut(){
                                 color="gray.900"
                                 _hover={{ bg: "#ffb13e"}}
                                 fontWeight="bold"
+                                disabled={subscription?.status === 'active' ? false : true}
                             >
                                 Salvar
                             </Button>
+
+                            {subscription?.status !== 'active' && (
+                                <Flex direction="row" align="center" justify="center">
+                                    <Link href="/planos">
+                                        <Text fontWeight="bold" mr={1} color="#31FB6a" cursor="pointer">
+                                            Seja premium
+                                        </Text>
+                                    </Link>
+                                    <Text color="white">
+                                         e tenha todos acessos liberados.
+                                    </Text>
+                                </Flex>
+                            )}
                         </Flex>
                     </Flex>
                 </Flex>
@@ -106,3 +141,34 @@ export default function EditHaircut(){
         </>
     )
 }
+
+export const getServerSideProps = canSSRAuth(async (ctx) => {
+    const { id } = ctx.params;
+    
+    try{
+        const apiClient = setupAPIClient(ctx);
+
+        const check = await apiClient.get('/haircut/check');
+
+        const response = await apiClient.get("/haircut/detail", {
+            params: {
+                haircut_id: id
+            }
+        })
+        
+        return {
+            props: {
+                haircut: response.data,
+                subscription: check.data?.subscriptions
+            }
+        }
+    }catch(err){
+        console.log(err);
+        return {
+            redirect: {
+                destination: '/dashboard',
+                permanent: false,
+            }
+        } 
+    }
+});
