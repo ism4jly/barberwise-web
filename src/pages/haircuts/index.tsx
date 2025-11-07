@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, ChangeEvent } from "react";
 import Head from "next/head";
 import { Sidebar } from "@/components/sidebar";
-import { Flex, Text, Heading, Button, Stack, Switch, useMediaQuery } from "@chakra-ui/react";
+import { Flex, Text, Heading, Button, Stack, Switch, useMediaQuery, SwitchCheckedChangeDetails } from "@chakra-ui/react";
 
 import Link from "next/link";
 
@@ -28,6 +28,29 @@ export default function Haircuts({haircuts}){
     const [isMobile] = useMediaQuery(["(max-width: 768px)"]);
 
     const [haircutList, setHaircutList] = useState(haircuts || []);
+    const [disabledHaircut, setDisabledHaircut] = useState("enabled");
+
+    async function handleDisabled(details: SwitchCheckedChangeDetails) {
+        
+        setDisabledHaircut(details.checked ? "enabled" : "disabled");
+
+        try {
+            const apiClient = setupAPIClient();
+
+            const status = details.checked ? true : false;
+
+            const response = await apiClient.get('/haircuts', {
+            params: {
+                status: status,
+            },
+            });
+
+            setHaircutList(response.data);
+        } catch (err) {
+            console.log(err);
+        }
+    }
+
 
     return(
         <>
@@ -61,7 +84,13 @@ export default function Haircuts({haircuts}){
 
                         <Stack ml="auto" align="center" direction="row">
                             <Text color="white" fontWeight="bold">ATIVOS</Text>
-                            <Switch.Root colorPalette="green" size="lg">
+                            <Switch.Root 
+                                colorPalette="green" 
+                                size="lg" 
+                                value={disabledHaircut} 
+                                onCheckedChange={handleDisabled}
+                                checked={disabledHaircut !== "disabled"}
+                            >
                                 <Switch.HiddenInput />
                                 <Switch.Control />
                             </Switch.Root>
