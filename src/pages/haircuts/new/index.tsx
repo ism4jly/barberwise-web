@@ -1,3 +1,4 @@
+import { useState } from "react";
 import Head from "next/head";
 import { Sidebar } from "@/components/sidebar";
 import { 
@@ -15,6 +16,8 @@ import { FiChevronLeft } from "react-icons/fi";
 import {canSSRAuth} from "../../../utils/canSSRAuth";
 import { setupAPIClient } from "@/services/api";
 
+import Router from "next/router";
+
 interface NewHaircutProps {
     subscription: boolean;
     count: number;
@@ -22,6 +25,27 @@ interface NewHaircutProps {
 
 export default function NewHaircut({subscription, count} : NewHaircutProps){
     const [isMobile] = useMediaQuery(["(max-width: 768px)"]);
+
+    const [name, setName] = useState('');
+    const [price, setPrice] = useState('');
+
+    async function handleRegister(){
+        if(name === '' || price === ''){ return; }
+
+        try{
+            const apiClient = setupAPIClient();
+            await apiClient.post('/haircut', {
+                name: name,
+                price: Number(price)
+            })
+            alert('Modelo cadastrado com sucesso!');
+
+            Router.push('/haircuts');
+        }catch(err){
+            console.log(err);
+        }
+    }
+
 
     return(
         <>
@@ -80,6 +104,8 @@ export default function NewHaircut({subscription, count} : NewHaircutProps){
                             bg="gray.900"
                             mb={3}
                             borderColor="gray.700"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
                         />
 
                         <Input
@@ -90,9 +116,12 @@ export default function NewHaircut({subscription, count} : NewHaircutProps){
                             bg="gray.900"
                             mb={4}
                             borderColor="gray.700"
+                            value={price}
+                            onChange={(e) => setPrice(e.target.value)}
                         />
 
                         <Button
+                            onClick={handleRegister}
                             w="85%"
                             size="lg"
                             color="gray.700"
