@@ -1,4 +1,4 @@
-import { useState, ChangeEvent } from "react";
+import { useState } from "react";
 import Head from "next/head";
 import { Sidebar } from "@/components/sidebar";
 import { Flex, Text, Heading, Button, Stack, Switch, useMediaQuery, SwitchCheckedChangeDetails } from "@chakra-ui/react";
@@ -23,7 +23,7 @@ interface HaircutsProps{
     haircuts: HaircutsItem[];
 }
 
-export default function Haircuts({haircuts}){
+export default function Haircuts({haircuts} : HaircutsProps){
 
     const [isMobile] = useMediaQuery(["(max-width: 768px)"]);
 
