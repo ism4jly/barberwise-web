@@ -4,7 +4,6 @@ import { Sidebar } from "@/components/sidebar";
 
 import {
     Flex,
-    Text,
     Heading,
     Button,
     Input,
@@ -13,22 +12,64 @@ import {
     createListCollection
 } from '@chakra-ui/react'
 
+import { canSSRAuth } from "@/utils/canSSRAuth";
+import { setupAPIClient } from "@/services/api";
 
-export default function New(){
+import { useRouter } from "next/router";
+
+interface HaircutProps {
+    id: string;
+    name: string;
+    price: number | string;
+    status: boolean;
+    user_id: string;
+}
+
+interface NewProps {
+    haircuts: HaircutProps[]
+}
+
+
+export default function New({haircuts} : NewProps){
 
     const [customer, setCustomer] = useState('');
+    const [selectedHaircut, setSelectedHaircut] = useState(haircuts[0]);
+
+    const router = useRouter();
 
     const collection = useMemo(() => {
         return createListCollection({
-        items: [
-            { name: "Barba completa", value: "barba_completa" },
-            { name: "Corte degradê", value: "corte_degrade" },
-            { name: "Sobrancelha", value: "sobrancelha" },
-        ],
+        items: haircuts.map((item) => ({
+            name: item.name,
+            value: item.id,
+        })),
         itemToString: (item) => item.name,
-        itemToValue: (item) => item.name,
-        })
-    }, [])
+        itemToValue: (item) => item.value,
+        });
+    }, [haircuts]);
+
+    function handleChangeSelect(details) {
+        const selectedId = details.value[0];
+        const haircutItem = haircuts.find(haircut => haircut.id === selectedId);
+
+        setSelectedHaircut(haircutItem);
+
+    }
+
+    async function handleRegister(){
+        try{
+            const apiClient = setupAPIClient();
+            await apiClient.post('/schedule', {
+                customer: customer,
+                haircut_id: selectedHaircut?.id
+            });
+            alert('Agendamento realizado com sucesso!');
+
+            router.push('/dashboard');
+        }catch(err){
+            console.log(err);
+        }
+    }
 
     return(
         <>
@@ -66,6 +107,7 @@ export default function New(){
                             type="text"
                             bg="barber.900"
                             borderColor="gray.700"
+                            color="white"
                             value={customer}
                             onChange={(e) => setCustomer(e.target.value)}
                         />
@@ -74,6 +116,7 @@ export default function New(){
                             size="lg"
                             width="85%"
                             mb={3}
+                            onValueChange={handleChangeSelect}
                         >
                             <Select.HiddenSelect />
                             <Select.Label color="white" fontWeight="bold">Selecione o corte</Select.Label>
@@ -107,6 +150,7 @@ export default function New(){
                             color="gray.900"
                             bg="button.cta"
                             _hover={{ bg: "#ffb13e" }}
+                            onClick={handleRegister}
                         >
                             Cadastrar
                         </Button>
@@ -118,3 +162,37 @@ export default function New(){
         </>
     )
 }
+
+export const getServerSideProps = canSSRAuth(async (ctx) => {
+    try{
+        const apiClient = setupAPIClient(ctx);
+        const response = await apiClient.get("/haircuts", {
+            params: {
+                status: true
+            }
+        })
+
+        if(response.data === null){
+            return {
+                redirect: {
+                    destination: '/dashboard',
+                    permanent: false,
+                }
+            }
+        }
+
+        return {
+            props: {
+                haircuts: response.data
+            }
+        }
+    }catch(err){
+        console.log(err);
+        return {
+            redirect: {
+                destination: '/dashboard',
+                permanent: false,
+            }
+        } 
+    }
+});
