@@ -6,8 +6,8 @@ import {
     Heading, 
     Button,
     Link as ChakraLink,
-    useMediaQuery
-
+    useMediaQuery,
+    useDisclosure
 } from "@chakra-ui/react";
 
 import Link from "next/link";
@@ -16,6 +16,7 @@ import { IoMdPerson } from "react-icons/io";
 import { canSSRAuth } from "@/utils/canSSRAuth";
 import { setupAPIClient } from "@/services/api";
 import { Sidebar } from "@/components/sidebar";
+import { ModalInfo } from "@/components/modal";
 
 export interface ScheduleItem {
     id: string;
@@ -28,20 +29,51 @@ export interface ScheduleItem {
     }
 }
 
-interface DashboardProps{
+interface DashboardProps {
     schedule: ScheduleItem[]
 }
 
-export default function Dashboard({ schedule } : DashboardProps) {
+export default function Dashboard({ schedule }: DashboardProps) {
     const [list, setList] = useState(schedule);
+    const [service, setService] = useState<ScheduleItem>();
+    const disclosure = useDisclosure();
 
-    const [isMobile] = useMediaQuery(["(max-width: 768px)"])
+    const [isMobile] = useMediaQuery(["(max-width: 768px)"]);
+
+    function handleOpenModal(item: ScheduleItem) {
+        setService(item);
+        disclosure.onOpen();
+    }
+
+    async function handleFinish(id: string) {
+        try{
+            const apiClient = setupAPIClient();
+            await apiClient.delete('/schedule',{
+                params: {
+                    schedule_id: id
+                }
+            });
+
+            const filterItem = list.filter(item => {
+                return (item?.id !== id);
+            });
+
+            setList(filterItem);
+            disclosure.onClose();
+            alert("Serviço finalizado com sucesso!");
+        }catch(err){
+            console.log(err);
+            disclosure.onClose();
+            alert("Erro ao finalizar serviço")
+        }
+    }
 
     return (
         <>
             <Head>
                 <title>BarberWise - Minha Barbearia</title>
             </Head>
+
             <Sidebar>
                 <Flex direction="column" alignItems="flex-start" justifyContent="flex-start">
                     <Flex w="100%" direction="row" align="center" justify="flex-start">
@@ -53,6 +85,7 @@ export default function Dashboard({ schedule } : DashboardProps) {
 
                     {list.map(item => (
                         <ChakraLink
+                            onClick={() => handleOpenModal(item)}
                             key={item?.id}
                             w="100%"
                             m={0}
@@ -78,23 +111,37 @@ export default function Dashboard({ schedule } : DashboardProps) {
                                     justify="center"
                                 >
                                     <IoMdPerson size={28} color="#f1f1f1" />
-                                    <Text color="white" fontWeight="bold" ml={4} lineClamp={1}>{item?.customer}</Text>
+                                    <Text color="white" fontWeight="bold" ml={4} lineClamp={1}>
+                                        {item?.customer}
+                                    </Text>
                                 </Flex>
 
-                                <Text mb={isMobile ? 2 : 0} fontWeight="bold" color="white">{item?.haircut?.name}</Text>
-                                <Text mb={isMobile ? 2 : 0} fontWeight="bold"  color="white">R$ {item?.haircut?.price}</Text>
-
+                                <Text mb={isMobile ? 2 : 0} fontWeight="bold" color="white">
+                                    {item?.haircut?.name}
+                                </Text>
+                                <Text mb={isMobile ? 2 : 0} fontWeight="bold" color="white">
+                                    R$ {item?.haircut?.price}
+                                </Text>
                             </Flex>
                         </ChakraLink>
                     ))}
                 </Flex>
             </Sidebar>
+
+            {/* Modal controlado manualmente */}
+            <ModalInfo 
+                isOpen={disclosure.open}
+                onOpen={disclosure.onOpen}
+                onClose={disclosure.onClose}
+                data={service}
+                finishService={ () => handleFinish(service?.id) }
+            />
         </>
     )
 }
 
 export const getServerSideProps = canSSRAuth(async (ctx) => {
-    try{
+    try {
         const apiClient = setupAPIClient(ctx);
         const response = await apiClient.get('/schedule');
 
@@ -103,11 +150,11 @@ export const getServerSideProps = canSSRAuth(async (ctx) => {
                 schedule: response.data
             }
         }
-    }catch(err){
+    } catch (err) {
         console.log(err);
         return {
-            props:{
-                schedule:[]
+            props: {
+                schedule: []
             }
         }
     }
