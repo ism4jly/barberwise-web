@@ -4,6 +4,7 @@ import { Sidebar } from "@/components/sidebar";
 
 import { canSSRAuth } from "@/utils/canSSRAuth";
 import { setupAPIClient } from "@/services/api";
+import { getStripeJs } from "@/services/stripe-js";
 
 interface PlanosProps{
     premium: boolean
@@ -12,6 +13,26 @@ interface PlanosProps{
 export default function Planos({ premium }: PlanosProps){
 
     const [isMobile] = useMediaQuery(["(max-width: 768px)"]);
+
+    const handleSubscribe = async () => {
+        if (premium) return;
+
+        try {
+            const apiClient = setupAPIClient();
+            const response = await apiClient.post('/subscribe');
+
+            const { sessionUrl } = response.data;
+
+            if (!sessionUrl) {
+                throw new Error("URL da sessão não encontrada");
+            }
+
+            window.location.href = sessionUrl;
+        } catch (err) {
+            console.log("Erro ao redirecionar para o checkout:", err);
+        }
+    };
+
 
     return(
         <>
@@ -96,7 +117,7 @@ export default function Planos({ premium }: PlanosProps){
                                 color="white"
                                 fontWeight="bold"
                                 _hover={{ bg: "gray.900"}}
-                                onClick={() => {}}
+                                onClick={handleSubscribe}
                                 disabled={premium}
                             >
                                 {premium ? (
